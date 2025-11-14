@@ -240,3 +240,54 @@ class GitHubLogin(Resource):
                     "username": user_json['username'],
                     "token": token,
                 }}, 200
+
+
+#changes for task 1
+
+# api-server-flask/api/routes.py
+from . import app, db
+from .models import Task, Comment  # Make sure to import Task and Comment
+from flask import request, jsonify
+
+# ... (Other existing routes) ...
+
+# --- TASK CRUD API ---
+
+# [CREATE] Add a new task
+@app.route('/api/tasks', methods=['POST'])
+def create_task():
+    data = request.get_json()
+    if not data or 'title' not in data:
+        return jsonify({"error": "Missing 'title'"}), 400
+    
+    new_task = Task(title=data['title'])
+    db.session.add(new_task)
+    db.session.commit()
+    return jsonify(new_task.to_dict()), 201
+
+# [READ] Get all tasks
+@app.route('/api/tasks', methods=['GET'])
+def get_tasks():
+    tasks = Task.query.order_by(Task.created_at.desc()).all()
+    return jsonify([task.to_dict() for task in tasks]), 200
+
+# [UPDATE] Edit a task
+@app.route('/api/tasks/<int:task_id>', methods=['PUT'])
+def update_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    data = request.get_json()
+    
+    if not data or 'title' not in data:
+        return jsonify({"error": "Missing 'title'"}), 400
+        
+    task.title = data['title']
+    db.session.commit()
+    return jsonify(task.to_dict()), 200
+
+# [DELETE] Delete a task
+@app.route('/api/tasks/<int:task_id>', methods=['DELETE'])
+def delete_task(task_id):
+    task = Task.query.get_or_404(task_id)
+    db.session.delete(task)
+    db.session.commit()
+    return jsonify({"message": "Task deleted successfully"}), 200
